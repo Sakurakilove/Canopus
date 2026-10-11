@@ -82,6 +82,11 @@ int canopus_p65_registry_firmware_restore(uint8_t *data, uint32_t size);
 #define P65_OBJECT_ALIGN UINT32_C(0x0C8BC7C9)
 #define P65_EVENT_ADD UINT32_C(0x0C8BCE79)
 #define P65_EVENT_REMOVE UINT32_C(0x0C8BD6D9)
-#define P65_OBJECT_ADD_FLAG UINT32_C(0x0C8BCCA1)
-#define P65_OBJECT_CLEAR_FLAG UINT32_C(0x0C8BE2F9)
+/* Stock Calendar row C76472A sets CLICKABLE (2) through C8BE2F8,
+ * then clears SCROLLABLE (16) through C8BCCA0 before adding event 7.
+ * The copied settings updater also clears HIDDEN through 1C166D48
+ * (same ROM destination as C8BCCA0) when secondary text is present.
+ * Swapping these veneers silently makes every Manager action unclickable. */
+#define P65_OBJECT_ADD_FLAG UINT32_C(0x0C8BE2F9)
+#define P65_OBJECT_CLEAR_FLAG UINT32_C(0x0C8BCCA1)
 #endif

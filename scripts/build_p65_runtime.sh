@@ -26,6 +26,7 @@ else:
 if hashlib.sha256(payload).hexdigest() != expected:
     raise SystemExit('error: P65 AP SHA-256 mismatch')
 PY
+python3 "$ROOT/scripts/verify_p65_ui_flags.py" "$FIRMWARE"
 mkdir -p "$OUT"
 python3 "$ROOT/scripts/prepare_p65_runtime_key.py" "$OUT"
 FLAGS="--target=arm-none-eabi -mcpu=cortex-m33 -mthumb -mfloat-abi=soft

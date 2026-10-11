@@ -67,9 +67,26 @@ static int32_t fake_list_configure(
 static int32_t fake_list_finalize(void *cookie, void *list)
 {
     struct fake_p65_lvx *fake = (struct fake_p65_lvx *)cookie;
+    struct fake_p65_row cached = fake->rows[0];
+    int has_cached = fake->row_count != 0u;
     CHECK(list == &fake->list_token);
     CHECK(fake->callbacks.row_count != 0);
-    CHECK_EQ(fake->callbacks.row_count(list, fake->callbacks.context), 0u);
+    fake->row_count = fake->callbacks.row_count(list, fake->callbacks.context);
+    fake->create_row_count = 0u;
+    memset(fake->rows, 0, sizeof(fake->rows));
+    for (uint32_t i = 0u; i < fake->row_count; i++) {
+        uint32_t old_class = cached.type | (cached.event_id != 0u ? 0x40u : 0u);
+        if (i == 0u && has_cached && old_class == fake->callbacks.row_class(
+                list, i, fake->callbacks.context)) {
+            /* Stock rebuilds can retrieve an object from the hidden cache. */
+            fake->rows[0] = cached;
+            fake->create_row_count = 1u;
+            fake->callbacks.row_update(list, &fake->rows[0], i,
+                                       fake->callbacks.context);
+        } else {
+            CHECK(fake->callbacks.row_create(list, i, fake->callbacks.context) != 0);
+        }
+    }
     fake->finalize_count++;
     return 0;
 }
@@ -122,6 +139,8 @@ static void fake_row_update(
     CHECK(list == &fake->list_token);
     CHECK(row_object != 0);
     if (row_object != 0) {
+        /* The actual mode-0 updater does not reconstruct widget classes. */
+        CHECK_EQ(((struct fake_p65_row *)row_object)->type, view->node->type);
         fake_store_row((struct fake_p65_row *)row_object, view, binding);
         fake->update_row_count++;
     }
@@ -388,7 +407,21 @@ TEST(p65_manager_backend_queries_and_routes_through_local_client)
     }
     CHECK_EQ(supervisor.modules[0].intent, CANOPUS_SUP_INTENT_ENABLED);
     CHECK_EQ(backend.model.modules[0].state, CANOPUS_STATE_ENABLED);
-    CHECK_EQ(fake.refresh_count, 5u);
+    CHECK_EQ(fake.refresh_count + fake.finalize_count - 1u, 5u);
+    /* Confirm/cancel changes labels to cards and back. Repeated navigation
+     * must neither update an incompatible widget nor exhaust 64 bindings. */
+    for (uint32_t i = 0u; i < CANOPUS_P65_UI_MAX_ROWS + 1u; i++) {
+        row = fake_find_event(&fake, CANOPUS_MANAGER_EVENT_DISABLE);
+        CHECK(row != 0);
+        if (row == 0) break;
+        dispatch_fake_click(row);
+        row = fake_find_event(&fake, CANOPUS_MANAGER_EVENT_CANCEL);
+        CHECK(row != 0);
+        if (row == 0) break;
+        dispatch_fake_click(row);
+        CHECK_EQ(backend.lvx_list.callback_error, 0);
+        CHECK_EQ(backend.model.view, CANOPUS_MANAGER_VIEW_MODULE_DETAIL);
+    }
     CHECK(canopus_manager_p65_backend_close(&backend) == CANOPUS_UI_OK);
 }
 

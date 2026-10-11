@@ -119,3 +119,26 @@ constructed only once. The regular-row selected flag follows upstream rather
 than being confused with the switch's checked flag. Compiled factory/update
 argument checks model widget leaves; physical UI and activation remain device
 tests. The shared semantic pages, order and text are unchanged.
+
+## 0.3.6: restore action clickability and rebuild incompatible rows
+
+Device feedback confirms the 0.3.5 layout is correct, but tapping Modules
+does nothing (one installed module, zero running). The flag veneers were
+reversed: the stock Calendar action at `0x0C76472A` adds CLICKABLE (2)
+through `0x0C8BE2F9`, then clears SCROLLABLE (16) through `0x0C8BCCA1`.
+The former bindings did the opposite and suppressed input despite attaching
+a click callback. `scripts/verify_p65_ui_flags.py` checks these exact firmware
+call sites and rejects the previous mapping as part of the runtime build.
+
+The mode-0 in-place list refresh calls the row updater by index without
+checking its widget class. Snapshot count/class changes now use the stock
+rebuild path instead, including confirmation-to-detail navigation. Previous
+callbacks are detached and binding slots retired before firmware recycles the
+rows. Cached objects receive fresh bindings when reused. Same-shape updates
+keep their existing objects. Official fonts, cards, order and copy are unchanged.
+
+Compiled flag-call checks and host navigation/confirmation/cache-reuse tests
+passed. These checks do not establish complete native touch routing or Corona
+activation on hardware. Update the first BIN, reboot once, open the bootstrap,
+then use Modules → corona → Enable/Confirm → Activate now/Confirm.
+The second installer, RPK 1.3.3-p65 and themes do not require another install.
