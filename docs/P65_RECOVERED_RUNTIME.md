@@ -32,6 +32,14 @@ choose **Immediately activate** in Canopus Manager after first installation.
 Enabled-module intent survives reboot; restoration occurs when you reopen the
 bootstrap, rather than through a system startup script.
 
+AstroBox's official Canopus/Corona modules also use `.bin` Lua installers for
+the native-component bootstrap; these files are not firmware updates. The
+separate `Corona-Manager-RW6.rpk` is a QuickApp and must use AstroBox's
+QuickApp/Application installation entry, while `.crpack` themes use the
+resource-pack entry. The RW6 adaptation has not been added to the official
+resource catalog; use the adapted local files rather than the Band installers
+currently listed there.
+
 Offline checks exercise the exact firmware ELF parser, section layout, symbol
 binding and module entry with modeled allocation and device registration. They
 do not establish native app registration, physical cold-boot behavior or UI
