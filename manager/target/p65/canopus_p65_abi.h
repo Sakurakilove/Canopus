@@ -24,12 +24,14 @@ typedef struct {
     uint8_t tail[24];
 } file_operations;
 
-#define CANOPUS_SUP_NUTTX_OPEN UINT32_C(0x0C247EA9)
-#define CANOPUS_SUP_NUTTX_CLOSE UINT32_C(0x0C244B61)
-#define CANOPUS_SUP_NUTTX_READ UINT32_C(0x0C2484E5)
-/* Plain fd write: permission check and fops +12 dispatch, no seek.
+#define CANOPUS_SUP_NUTTX_OPEN UINT32_C(0x0C8BEF01)
+#define CANOPUS_SUP_NUTTX_CLOSE UINT32_C(0x0C8BDBA9)
+#define CANOPUS_SUP_NUTTX_READ UINT32_C(0x0C8BEAF1)
+/* Use the same live veneers as stock modlib/LVGL, not initializer-copy
+ * storage at 0x0C24xxxx. Their runtime code aliases are 0x1C15xxxx.
+ * Plain fd write: permission check and fops +12 dispatch, no seek.
  * 0x0C248455 is pwrite with a stack-passed 64-bit offset, NOT this ABI. */
-#define CANOPUS_SUP_NUTTX_WRITE UINT32_C(0x0C2497F1)
+#define CANOPUS_SUP_NUTTX_WRITE UINT32_C(0x0C8BE041)
 #define CANOPUS_SUP_NUTTX_ERRNO_LOCATION UINT32_C(0x0C4F793D)
 #define CANOPUS_SUP_NUTTX_RENAME UINT32_C(0x0C8BDF89)
 #define CANOPUS_SUP_NUTTX_UNLINK UINT32_C(0x0C8BEFD1)
@@ -43,8 +45,10 @@ int canopus_p65_registry_firmware_persist(const uint8_t *data, uint32_t size);
 int canopus_p65_registry_firmware_restore(uint8_t *data, uint32_t size);
 
 #define P65_NOTIFICATION_INSERT UINT32_C(0x0CA60099)
-#define P65_APP_INSTALL UINT32_C(0x0C2418A9)
-#define P65_APP_LOOKUP UINT32_C(0x0C241421)
+/* Startup copy: raw 0x0c0efdc4 -> executable alias 0x1c000000.
+ * These entries are copied functions, not callable flash storage. */
+#define P65_APP_INSTALL UINT32_C(0x1C151AE5)
+#define P65_APP_LOOKUP UINT32_C(0x1C15165D)
 #define P65_LAUNCHER_REFRESH UINT32_C(0x0C7EC451)
 /* Exact all_list caller C764170: create(parent), then set_title(list,text).
  * C8BE008 was previously misidentified as the list factory. */
@@ -52,7 +56,7 @@ int canopus_p65_registry_firmware_restore(uint8_t *data, uint32_t size);
 #define P65_LIST_SET_TITLE UINT32_C(0x0C8BE009)
 #define P65_LIST_CONFIGURE UINT32_C(0x0C8BEF61)
 #define P65_LIST_FINALIZE UINT32_C(0x0C8BEBC1)
-#define P65_LIST_REFRESH UINT32_C(0x0C236E19)
+#define P65_LIST_REFRESH UINT32_C(0x1C147055)
 #define P65_ROW_CREATE UINT32_C(0x0C8BEB71)
 #define P65_ROW_CLASS UINT32_C(0x3C21B55C)
 #define P65_LABEL_CREATE UINT32_C(0x0C78BCB5)

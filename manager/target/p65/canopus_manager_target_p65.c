@@ -208,7 +208,7 @@ int canopus_manager_native_install(void)
     typedef void *(*lookup_fn)(const char *);
     typedef void (*refresh_fn)(void);
     int rc;
-    if (!CANOPUS_P65_DEPLOYMENT_ENABLED) {
+    if (!CANOPUS_P65_SESSION_ENABLED) {
         canopus_manager_target_record.app_install_result =
             CANOPUS_P65_ERR_DEPLOYMENT_BLOCKED;
         return CANOPUS_P65_ERR_DEPLOYMENT_BLOCKED;

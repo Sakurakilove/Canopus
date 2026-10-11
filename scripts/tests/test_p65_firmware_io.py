@@ -30,7 +30,7 @@ FIRMWARE = Path(os.environ.get("CANOPUS_P65_FIRMWARE",
                               str(Path.home() / "develop/temp/p65_v3.100.043_vela_ap.bin")))
 SHA = "a19b601477569765103eaf468b937bd8026b4d68ffa5c896bde222a79e475858"
 REJECTED_PWRITE = 0x0C248455
-WRITE = 0x0C2497F1
+WRITE = 0x0C8BE041
 
 
 def firmware_bytes():
@@ -56,6 +56,9 @@ class WriteMachine:
         u.ctl_set_cpu_model(UC_CPU_ARM_CORTEX_M33)
         u.mem_map(0x0C0C0000, (len(data) + 4095) & ~4095)
         u.mem_write(0x0C0C0000, data)
+        u.mem_map(0x1C000000, 0x3d3000)
+        start=0x0c0efdc4-0x0c0c0000
+        u.mem_write(0x1C000000,data[start:start+0x3d2080])
         u.mem_map(0x3C400000, 0x10000)
         u.mem_map(0x20000000, 0x40000)
         u.mem_write(self.BUFFER, payload)
@@ -73,6 +76,9 @@ class WriteMachine:
         self.hook(0x0C2444C4, self.get_file)
         self.hook(0x0C244560, self.put_file)
         self.hook(0x0C25823C, lambda: self.ERRNO)
+        self.hook(0x1C154700, self.get_file)
+        self.hook(0x1C15479C, self.put_file)
+        self.hook(0x1C168478, lambda: self.ERRNO)
         self.hook(self.DRIVER, self.write_driver)
 
     def word(self, address, value=None):

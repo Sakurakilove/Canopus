@@ -36,7 +36,7 @@ def generate(output):
     if not addresses:
         raise ValueError("no experimental addresses")
     for address in addresses:
-        if not (0x0C0C0000 <= address < 0x0CBFF484 or address == 0x3C21B55C):
+        if not (0x0C0C0000 <= address < 0x0CBFF484 or address in (0x1C151AE5, 0x1C15165D, 0x1C147055) or address == 0x3C21B55C):
             raise ValueError(f"address outside the exact P65 ABI: {address:#x}")
         name = f"experimental_{address:08x}"
         record = {
