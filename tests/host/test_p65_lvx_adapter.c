@@ -148,7 +148,7 @@ static void fake_list_refresh(void *cookie, void *list)
     for (i = 0u; i < count; i++) {
         uint32_t key = fake->callbacks.row_class(
             list, i, fake->callbacks.context);
-        CHECK(key < CANOPUS_UI_MAX_NODES);
+        CHECK(key <= 0xFFu);
         if (i < fake->create_row_count) {
             fake->callbacks.row_update(list, &fake->rows[i], i,
                                        fake->callbacks.context);

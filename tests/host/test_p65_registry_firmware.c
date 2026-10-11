@@ -72,7 +72,7 @@ TEST(p65_firmware_registry_roundtrip_and_failure_fallback)
 {
     uint8_t payload[CANOPUS_SUP_REGISTRY_SIZE] = {0}, output[CANOPUS_SUP_REGISTRY_SIZE];
     uint32_t magic = CANOPUS_SUP_REGISTRY_MAGIC;
-    CHECK_EQ(CANOPUS_SUP_NUTTX_WRITE, UINT32_C(0x0C2497F1));
+    CHECK_EQ(CANOPUS_SUP_NUTTX_WRITE, UINT32_C(0x0C8BE041));
     CHECK(CANOPUS_SUP_NUTTX_WRITE != UINT32_C(0x0C248455));
     CHECK_EQ(canopus_p65_registry_supervisor_save_error(0), CANOPUS_SUP_ERR_NONE);
     CHECK_EQ(canopus_p65_registry_supervisor_save_error(CANOPUS_P65_REGISTRY_ERR_WRITE),

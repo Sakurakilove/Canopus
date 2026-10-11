@@ -63,11 +63,16 @@ int canopus_p65_registry_firmware_restore(uint8_t *data, uint32_t size);
 #define P65_LIST_CREATE_TITLE UINT32_C(0x0C8BE009)
 #define P65_LIST_CONFIGURE UINT32_C(0x0C8BEF61)
 #define P65_LIST_FINALIZE UINT32_C(0x0C8BEBC1)
-#define P65_LIST_REFRESH UINT32_C(0x1C147055)
+#define P65_LIST_REFRESH UINT32_C(0x1C147225)
+/* Stock LVX settings row factory/content/update, copied to executable RAM. */
+#define P65_SETTINGS_ROW_CREATE UINT32_C(0x1C129639)
+#define P65_SETTINGS_ROW_CONTENT UINT32_C(0x1C129691)
+#define P65_SETTINGS_ROW_UPDATE UINT32_C(0x1C129935)
 #define P65_ROW_CREATE UINT32_C(0x0C8BEB71)
 #define P65_ROW_CLASS UINT32_C(0x3C21B55C)
 #define P65_LABEL_CREATE UINT32_C(0x0C78BCB5)
 #define P65_LABEL_TEXT UINT32_C(0x0C78C879)
+#define P65_LABEL_LONG_MODE UINT32_C(0x0C78C995)
 /* C764638: stock primary/secondary Chinese-capable text styles, applied
  * with (label, style, 255, 0) through C8BCF20 -> 1C12DAA0. */
 #define P65_TEXT_STYLE_APPLY UINT32_C(0x0C8BCF21)
@@ -78,4 +83,5 @@ int canopus_p65_registry_firmware_restore(uint8_t *data, uint32_t size);
 #define P65_EVENT_ADD UINT32_C(0x0C8BCE79)
 #define P65_EVENT_REMOVE UINT32_C(0x0C8BD6D9)
 #define P65_OBJECT_ADD_FLAG UINT32_C(0x0C8BCCA1)
+#define P65_OBJECT_CLEAR_FLAG UINT32_C(0x0C8BE2F9)
 #endif

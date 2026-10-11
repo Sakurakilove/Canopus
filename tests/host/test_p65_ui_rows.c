@@ -81,7 +81,7 @@ TEST(p65_rows_flatten_visible_nodes_and_keep_descendants)
     CHECK_EQ(view.node->key, 5u);
     CHECK_EQ(view.event_id, 42u);
     CHECK_EQ(view.generation, 7u);
-    CHECK_EQ(view.cache_key, CANOPUS_UI_NODE_ACTION_ROW);
+    CHECK_EQ(view.cache_key, CANOPUS_UI_NODE_ACTION_ROW | 0x40u);
     CHECK(strcmp(view.secondary, "Ready") == 0);
 }
 
@@ -113,6 +113,14 @@ TEST(p65_rows_respect_hidden_ancestors_and_disabled_events)
     CHECK(canopus_p65_ui_rows_get(&rows, 0u, &view) == CANOPUS_UI_OK);
     CHECK_EQ(view.node->key, 3u);
     CHECK_EQ(view.event_id, 0u);
+    {
+        uint8_t disabled_key = view.cache_key;
+        snapshot.nodes[2].flags |= CANOPUS_UI_NODE_FLAG_ENABLED;
+        CHECK(canopus_p65_ui_rows_build(&rows, &snapshot) == CANOPUS_UI_OK);
+        CHECK(canopus_p65_ui_rows_get(&rows, 0u, &view) == CANOPUS_UI_OK);
+        CHECK(view.cache_key != disabled_key);
+        snapshot.nodes[2].flags &= ~CANOPUS_UI_NODE_FLAG_ENABLED;
+    }
 }
 
 TEST(p65_rows_reject_bad_strings_without_overwriting_output)

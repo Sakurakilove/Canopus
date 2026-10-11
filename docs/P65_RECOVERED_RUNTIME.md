@@ -98,3 +98,24 @@ so Chinese text uses the firmware's font fallback instead of the default
 label font. Row geometry, entry order and text remain unchanged. Compiled
 call arguments were checked with modeled widget/style leaves; physical
 glyph rendering and module activation still require device confirmation.
+
+### Official settings cards and refresh (0.3.5)
+
+The 0.3.4 Calendar `all_list` row was the wrong prefab for Manager:
+it used a large secondary font and lacked the stock action affordance.
+The P65 binding now matches upstream Band 11's LVX settings-card sequence:
+create once, add content once, update selection on every render. Exact P65
+executable aliases are `0x1C129639` (create), `0x1C129691` (seven-argument
+content), and `0x1C129935` (six-argument update). The stock class is
+`0x3C2A315C`; child labels are at +92/+96 and content width at +100.
+Fonts, colors, padding and rounded backgrounds come from the firmware.
+Secondary text wraps at the native content width. Enabled actions use the
+stock forward affordance, disable child scrolling, and receive click events.
+
+Refresh now uses `0x1C147225`, which invokes configured row-update callbacks,
+rather than reusing the initialization function `0x1C147055`. Interactive and
+inactive rows use distinct 8-bit cache classes because trailing content is
+constructed only once. The regular-row selected flag follows upstream rather
+than being confused with the switch's checked flag. Compiled factory/update
+argument checks model widget leaves; physical UI and activation remain device
+tests. The shared semantic pages, order and text are unchanged.

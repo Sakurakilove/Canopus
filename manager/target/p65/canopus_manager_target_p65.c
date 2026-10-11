@@ -105,41 +105,83 @@ static void row_remove_event(void *cookie, void *list, void *row)
     (void)cookie; (void)list;
     CALL(P65_EVENT_REMOVE, fn)(row, canopus_p65_ui_row_click_event);
 }
+/* Use the same LVX settings cards as the official Manager, not Calendar's
+ * all_list rows (their secondary style is 40 px and has no action affordance). */
+typedef void (*row_content_fn)(void *, const void *, const char *,
+                              const char *, int32_t, uint32_t, uint32_t);
+typedef void (*row_update_fn)(void *, const void *, const char *,
+                             const char *, int32_t, uint32_t);
+typedef void (*flag_fn)(void *, uint32_t);
+static int plain_row(const struct canopus_p65_ui_row_view_v1 *view)
+{
+    return view->node->type == CANOPUS_UI_NODE_SECTION ||
+           view->node->type == CANOPUS_UI_NODE_TEXT;
+}
+static void bind_row_event(void *row,
+    const struct canopus_p65_ui_row_view_v1 *view,
+    struct canopus_p65_ui_event_binding_v1 *binding)
+{
+    /* Scrolling belongs to the list. Only enabled action rows receive clicks. */
+    CALL(P65_OBJECT_CLEAR_FLAG, flag_fn)(row, 16);
+    row_remove_event(0, 0, row);
+    if (view->event_id != 0u) {
+        CALL(P65_OBJECT_ADD_FLAG, flag_fn)(row, 2);
+        CALL(P65_EVENT_ADD, event_fn)(row, canopus_p65_ui_row_click_event, 7, binding);
+    } else {
+        CALL(P65_OBJECT_CLEAR_FLAG, flag_fn)(row, 2);
+    }
+}
+static void row_wrap_secondary(void *row)
+{
+    /* LVX owns child pointers at +92/+96, not Calendar's +56/+60.
+     * Keep the stock fonts, colors, rounded background and padding. */
+    void **words = row;
+    void *secondary = words[24];
+    if (secondary != 0) {
+        CALL(P65_LABEL_LONG_MODE, flag_fn)(secondary, 0);
+        CALL(P65_OBJECT_SIZE, size_fn)(secondary, (int32_t)(uintptr_t)words[25],
+                                      (int32_t)UINT32_C(0x200007D1));
+    }
+}
 static void row_update(void *cookie, void *list, void *row,
     const struct canopus_p65_ui_row_view_v1 *view,
     struct canopus_p65_ui_event_binding_v1 *binding)
 {
-    void **words = row;
     (void)cookie; (void)list;
-    /* Stock listview's child label slots recovered in C764638/C7644A0. */
-    CALL(P65_LABEL_TEXT, text_fn)(words[14], view->primary ? view->primary : "");
-    CALL(P65_LABEL_TEXT, text_fn)(words[15], view->secondary ? view->secondary : "");
-    row_remove_event(cookie, list, row);
-    CALL(P65_EVENT_ADD, event_fn)(row, canopus_p65_ui_row_click_event, 7, binding);
+    if (plain_row(view)) {
+        CALL(P65_LABEL_TEXT, text_fn)(row, view->primary ? view->primary : "");
+    } else {
+        CALL(P65_SETTINGS_ROW_UPDATE, row_update_fn)(row, 0,
+            view->primary ? view->primary : "", view->secondary ? view->secondary : "",
+            0, view->node->type != CANOPUS_UI_NODE_SWITCH_ROW ||
+               (view->node->flags & CANOPUS_UI_NODE_FLAG_CHECKED) != 0u);
+        row_wrap_secondary(row);
+    }
+    bind_row_event(row, view, binding);
 }
 static void *row_create(void *cookie, void *list,
     const struct canopus_p65_ui_row_view_v1 *view,
     struct canopus_p65_ui_event_binding_v1 *binding)
 {
-    typedef void *(*class_fn)(const void *, void *);
-    typedef void (*flag_fn)(void *, uint32_t);
-    typedef void (*style_fn)(void *, const void *, uint32_t, uint32_t);
-    void **row = CALL(P65_ROW_CREATE, class_fn)(
-        (const void *)(uintptr_t)P65_ROW_CLASS, list);
-    if (!row) return 0;
-    row[14] = CALL(P65_LABEL_CREATE, create_fn)(row);
-    row[15] = CALL(P65_LABEL_CREATE, create_fn)(row);
-    if (!row[14] || !row[15]) return 0;
-    CALL(P65_TEXT_STYLE_APPLY, style_fn)(row[14],
-        (const void *)(uintptr_t)P65_PRIMARY_TEXT_STYLE, 255, 0);
-    CALL(P65_TEXT_STYLE_APPLY, style_fn)(row[15],
-        (const void *)(uintptr_t)P65_SECONDARY_TEXT_STYLE, 255, 0);
-    CALL(P65_OBJECT_SIZE, size_fn)(row, 420, 116);
-    CALL(P65_OBJECT_SIZE, size_fn)(row[14], 370, 45);
-    CALL(P65_OBJECT_SIZE, size_fn)(row[15], 370, 36);
-    CALL(P65_OBJECT_ALIGN, align_fn)(row[14], 1, 24, 14);
-    CALL(P65_OBJECT_ALIGN, align_fn)(row[15], 1, 24, 64);
-    CALL(P65_OBJECT_ADD_FLAG, flag_fn)(row, 16);
+    void *row;
+    (void)cookie;
+    if (plain_row(view)) {
+        typedef void (*style_fn)(void *, const void *, uint32_t, uint32_t);
+        row = CALL(P65_LABEL_CREATE, create_fn)(list);
+        if (!row) return 0;
+        CALL(P65_TEXT_STYLE_APPLY, style_fn)(row,
+            (const void *)(uintptr_t)P65_PRIMARY_TEXT_STYLE, 255, 0);
+        CALL(P65_OBJECT_SIZE, size_fn)(row, 416, 40);
+        CALL(P65_LABEL_TEXT, text_fn)(row, view->primary ? view->primary : "");
+    } else {
+        uint32_t trailing = view->event_id != 0u ? 3u : 0u;
+        row = CALL(P65_SETTINGS_ROW_CREATE, create_fn)(list);
+        if (!row) return 0;
+        CALL(P65_SETTINGS_ROW_CONTENT, row_content_fn)(row, 0,
+            view->primary ? view->primary : "", view->secondary ? view->secondary : "",
+            0, (view->node->flags & CANOPUS_UI_NODE_FLAG_CHECKED) != 0u, trailing);
+    }
+    /* Upstream populates once, then updates selection/state on every render. */
     row_update(cookie, list, row, view, binding);
     return row;
 }
