@@ -68,6 +68,11 @@ int canopus_p65_registry_firmware_restore(uint8_t *data, uint32_t size);
 #define P65_ROW_CLASS UINT32_C(0x3C21B55C)
 #define P65_LABEL_CREATE UINT32_C(0x0C78BCB5)
 #define P65_LABEL_TEXT UINT32_C(0x0C78C879)
+/* C764638: stock primary/secondary Chinese-capable text styles, applied
+ * with (label, style, 255, 0) through C8BCF20 -> 1C12DAA0. */
+#define P65_TEXT_STYLE_APPLY UINT32_C(0x0C8BCF21)
+#define P65_PRIMARY_TEXT_STYLE UINT32_C(0x3C47984C)
+#define P65_SECONDARY_TEXT_STYLE UINT32_C(0x3C479888)
 #define P65_OBJECT_SIZE UINT32_C(0x0C8BDEC9)
 #define P65_OBJECT_ALIGN UINT32_C(0x0C8BC7C9)
 #define P65_EVENT_ADD UINT32_C(0x0C8BCE79)

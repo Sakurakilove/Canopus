@@ -88,3 +88,13 @@ Canopus / mode=0 / callback=NULL / cookie=NULL with caller-saved registers and
 stack cookie poisoned before the call. It does not execute the complete page
 or verify physical stability. Update the bootstrap BIN and restart before
 opening it; the device result still needs user confirmation.
+
+### Native list text styles (0.3.4)
+
+Stock row creation at `0x0C764638` applies primary style `0x3C47984C`
+and secondary style `0x3C479888` through `0x0C8BCF21` with arguments
+`(label, style, 255, 0)`. The P65 row adapter now uses these same styles
+so Chinese text uses the firmware's font fallback instead of the default
+label font. Row geometry, entry order and text remain unchanged. Compiled
+call arguments were checked with modeled widget/style leaves; physical
+glyph rendering and module activation still require device confirmation.

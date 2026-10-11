@@ -123,12 +123,17 @@ static void *row_create(void *cookie, void *list,
 {
     typedef void *(*class_fn)(const void *, void *);
     typedef void (*flag_fn)(void *, uint32_t);
+    typedef void (*style_fn)(void *, const void *, uint32_t, uint32_t);
     void **row = CALL(P65_ROW_CREATE, class_fn)(
         (const void *)(uintptr_t)P65_ROW_CLASS, list);
     if (!row) return 0;
     row[14] = CALL(P65_LABEL_CREATE, create_fn)(row);
     row[15] = CALL(P65_LABEL_CREATE, create_fn)(row);
     if (!row[14] || !row[15]) return 0;
+    CALL(P65_TEXT_STYLE_APPLY, style_fn)(row[14],
+        (const void *)(uintptr_t)P65_PRIMARY_TEXT_STYLE, 255, 0);
+    CALL(P65_TEXT_STYLE_APPLY, style_fn)(row[15],
+        (const void *)(uintptr_t)P65_SECONDARY_TEXT_STYLE, 255, 0);
     CALL(P65_OBJECT_SIZE, size_fn)(row, 420, 116);
     CALL(P65_OBJECT_SIZE, size_fn)(row[14], 370, 45);
     CALL(P65_OBJECT_SIZE, size_fn)(row[15], 370, 36);
