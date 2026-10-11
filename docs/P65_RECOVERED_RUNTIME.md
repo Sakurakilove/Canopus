@@ -68,3 +68,23 @@ Replace the first bootstrap BIN and restart the watch before opening it. The
 new code cannot replace an already resident Supervisor in the same boot. Keep
 the existing Corona installation/registry and themes. The native application
 entry is titled **Canopus**; it is created by this BIN, not a fourth package.
+
+## 0.3.3: correct the native Manager title callback ABI
+
+Device feedback confirms the 0.3.2 launcher entry appears, but opening Canopus
+reboots the watch. The P65 list title entry `0x0C8BE009` is a five-argument
+factory, not a two-argument text setter: its wrappers at `1C14885C` and
+`1C14FB64` forward `(list, text, mode, event_callback, cookie)`, with the cookie
+on the caller's stack. The old call left the mode and callback unspecified.
+The native adapter now passes mode zero and explicit null callback/cookie and
+checks the returned header. List refresh uses its one-argument signature. Page
+creation rejects a null page/root and clears live/event state on init failure.
+Module restoration stays in the bootstrap rather than the page-create path.
+
+Offline verification executed the actual compiled `list_create` from the
+updated Supervisor, with the exact firmware title wrappers and modeled widget
+allocation/title leaf/style application. The five arguments were observed as
+Canopus / mode=0 / callback=NULL / cookie=NULL with caller-saved registers and
+stack cookie poisoned before the call. It does not execute the complete page
+or verify physical stability. Update the bootstrap BIN and restart before
+opening it; the device result still needs user confirmation.

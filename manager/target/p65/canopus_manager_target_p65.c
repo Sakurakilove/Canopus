@@ -15,6 +15,10 @@
 #define CALL(address, type) ((type)(uintptr_t)(address))
 typedef void *(*create_fn)(void *);
 typedef void (*text_fn)(void *, const char *);
+/* P65 title creation takes a mode, event callback and stack-passed cookie.
+ * Calling it as text_fn leaks unspecified registers/stack into LVGL. */
+typedef void *(*title_fn)(void *, const char *, uint32_t,
+                          void (*)(void *), void *);
 typedef void (*one_fn)(void *);
 typedef void (*size_fn)(void *, int32_t, int32_t);
 typedef void (*align_fn)(void *, uint32_t, int32_t, int32_t);
@@ -72,7 +76,8 @@ static int32_t list_create(void *cookie, void *parent, const void *descriptor,
     (void)cookie; (void)descriptor;
     *out = CALL(P65_LIST_CREATE, create_fn)(parent);
     if (!*out) return CANOPUS_UI_ERR_BACKEND;
-    CALL(P65_LIST_SET_TITLE, text_fn)(*out, title);
+    if (!CALL(P65_LIST_CREATE_TITLE, title_fn)(*out, title, 0, 0, 0))
+        return CANOPUS_UI_ERR_BACKEND;
     return 0;
 }
 static int32_t list_configure(void *cookie, void *list,
@@ -91,9 +96,8 @@ static int32_t list_finalize(void *cookie, void *list)
 }
 static void list_refresh(void *cookie, void *list)
 {
-    typedef void (*fn)(void *, uint32_t, uint32_t);
     (void)cookie;
-    CALL(P65_LIST_REFRESH, fn)(list, 0, 0);
+    CALL(P65_LIST_REFRESH, one_fn)(list);
 }
 static void row_remove_event(void *cookie, void *list, void *row)
 {
@@ -148,16 +152,21 @@ static int page_create(struct p65_page *page, void *root, void *data)
 {
     int rc;
     (void)data;
+    if (!page || !root) return CANOPUS_UI_ERR_ARGUMENT;
     if (page_live) return -16;
     /* Firmware owns root deletion; backend storage is boot-resident. */
     page->root = root;
     page_live = 1;
     canopus_manager_target_record.create_count++;
     canopus_manager_target_record.root_object = (uintptr_t)root;
-    (void)canopus_supervisor_restore_after_boot();
     rc = canopus_manager_p65_backend_init(&backend, canopus_supervisor_get(),
         &list_ops, 0, root, title, CANOPUS_TARGET_ID,
         CANOPUS_TARGET_FIRMWARE_VERSION, CANOPUS_TARGET_FIRMWARE_BUILD, 1);
+    if (rc != 0) {
+        backend.native.ui.has_committed = 0;
+        backend.native.ui.event_handler = 0;
+        page_live = 0;
+    }
     return rc;
 }
 static int page_resume(struct p65_page *page)

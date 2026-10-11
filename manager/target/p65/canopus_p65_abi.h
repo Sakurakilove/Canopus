@@ -56,10 +56,11 @@ int canopus_p65_registry_firmware_restore(uint8_t *data, uint32_t size);
 #define P65_LAUNCHER_LIST UINT32_C(0x0C7ECAE5)
 #define P65_LIST_FIRST UINT32_C(0x0C73E1C5)
 #define P65_LIST_NEXT UINT32_C(0x0C73E1E5)
-/* Exact all_list caller C764170: create(parent), then set_title(list,text).
- * C8BE008 was previously misidentified as the list factory. */
+/* Exact all_list caller C764170: create(parent), then create_title with
+ * (list,text,mode,event_callback,cookie). C8BE008 is NOT a two-arg text setter.
+ * C8BE008 -> 1C14885C -> 1C14FB64 forwards all five arguments. */
 #define P65_LIST_CREATE UINT32_C(0x0C8BC759)
-#define P65_LIST_SET_TITLE UINT32_C(0x0C8BE009)
+#define P65_LIST_CREATE_TITLE UINT32_C(0x0C8BE009)
 #define P65_LIST_CONFIGURE UINT32_C(0x0C8BEF61)
 #define P65_LIST_FINALIZE UINT32_C(0x0C8BEBC1)
 #define P65_LIST_REFRESH UINT32_C(0x1C147055)
