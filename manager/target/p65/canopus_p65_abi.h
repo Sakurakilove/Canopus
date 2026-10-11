@@ -49,7 +49,13 @@ int canopus_p65_registry_firmware_restore(uint8_t *data, uint32_t size);
  * These entries are copied functions, not callable flash storage. */
 #define P65_APP_INSTALL UINT32_C(0x1C151AE5)
 #define P65_APP_LOOKUP UINT32_C(0x1C15165D)
-#define P65_LAUNCHER_REFRESH UINT32_C(0x0C7EC451)
+/* C7EC450 consumes r0 as a uint16 app ID, calls the ID lookup at
+ * manager +24/+4, then C7EBD10 creates its launcher record. It is NOT
+ * a void(void) refresh. The list getter's false branch does not reload names. */
+#define P65_LAUNCHER_ADD UINT32_C(0x0C7EC451)
+#define P65_LAUNCHER_LIST UINT32_C(0x0C7ECAE5)
+#define P65_LIST_FIRST UINT32_C(0x0C73E1C5)
+#define P65_LIST_NEXT UINT32_C(0x0C73E1E5)
 /* Exact all_list caller C764170: create(parent), then set_title(list,text).
  * C8BE008 was previously misidentified as the list factory. */
 #define P65_LIST_CREATE UINT32_C(0x0C8BC759)

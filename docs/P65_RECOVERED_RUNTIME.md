@@ -45,3 +45,26 @@ binding and module entry with modeled allocation and device registration. They
 do not establish native app registration, physical cold-boot behavior or UI
 stability on a real watch. Do not mix this runtime with a standalone RW6 icon
 module loaded earlier in the same boot; restart before changing runtimes.
+
+## 0.3.2: publish the native Manager in the launcher
+
+The earlier bootstrap reported ready after internal package registration even
+though Canopus was absent from the device application list. Firmware entry
+`0x0C7EC451` takes a `uint16_t` application ID, not `void(void)`: it looks up
+that ID, allocates a 24-byte launcher record and inserts it in the launcher
+list. The corrected call supplies `0x00CA`. The installer now checks for that
+ID in the launcher before reporting success, skips an existing launcher entry,
+and permits retry after publication fails without duplicating the package.
+An existing package with foreign resident callbacks is rejected.
+
+`python scripts/verify_p65_launcher.py /path/to/vela_ap.bin` runs the exact
+firmware add/record-allocation/list-getter code under Unicorn (install Unicorn
+and pass the pinned AP hash). It checks that ID 0xCA reaches the app lookup and
+creates the expected ID/name/icon record; ID zero creates no entry. Allocator,
+app lookup, logging and UI refresh are modeled. This is offline ABI evidence,
+not confirmation of physical launcher visibility or native UI stability.
+
+Replace the first bootstrap BIN and restart the watch before opening it. The
+new code cannot replace an already resident Supervisor in the same boot. Keep
+the existing Corona installation/registry and themes. The native application
+entry is titled **Canopus**; it is created by this BIN, not a fourth package.

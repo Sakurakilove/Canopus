@@ -63,7 +63,6 @@ volatile struct canopus_manager_target_record canopus_manager_target_record = {
     .build_id = CANOPUS_MANAGER_TARGET_BUILD_ID,
 };
 static struct canopus_manager_p65_backend_v1 backend;
-static uint8_t installed;
 static uint8_t page_live;
 static const char title[] = "Canopus";
 
@@ -202,12 +201,32 @@ static struct p65_page page = {
 };
 static struct p65_page *pages[] = { &page };
 
+/* Internal package registration and launcher publication are separate.
+ * Bound traversal also makes a corrupt/cyclic firmware list fail closed. */
+static int launcher_contains_manager(void)
+{
+    typedef void *(*list_fn)(uint32_t);
+    typedef void *(*first_fn)(void *);
+    typedef void *(*next_fn)(void *, void *);
+    void *list = CALL(P65_LAUNCHER_LIST, list_fn)(0);
+    void *item;
+    uint32_t count;
+    if (!list) return -1;
+    item = CALL(P65_LIST_FIRST, first_fn)(list);
+    for (count = 0; item && count < 512; count++) {
+        if (*(const uint16_t *)item == app.app_id) return 1;
+        item = CALL(P65_LIST_NEXT, next_fn)(list, item);
+    }
+    return item ? -1 : 0;
+}
 int canopus_manager_native_install(void)
 {
     typedef void (*install_fn)(void *, void *, uint32_t);
-    typedef void *(*lookup_fn)(const char *);
-    typedef void (*refresh_fn)(void);
+    typedef struct p65_app *(*lookup_fn)(const char *);
+    typedef void (*add_fn)(uint16_t);
+    struct p65_app *registered;
     int rc;
+    canopus_manager_target_record.launcher_add_result = -1;
     if (!CANOPUS_P65_SESSION_ENABLED) {
         canopus_manager_target_record.app_install_result =
             CANOPUS_P65_ERR_DEPLOYMENT_BLOCKED;
@@ -216,20 +235,25 @@ int canopus_manager_native_install(void)
     rc = canopus_identity_guard();
     canopus_manager_target_record.identity_result = rc;
     if (rc != 0) return rc;
-    if (installed) return 0;
-    if (CALL(P65_APP_LOOKUP, lookup_fn)(app.package) != 0) {
-        canopus_manager_target_record.app_install_result = -17;
-        return -17;
+    registered = CALL(P65_APP_LOOKUP, lookup_fn)(app.package);
+    if (!registered) {
+        CALL(P65_APP_INSTALL, install_fn)(&app, pages, 1);
+        registered = CALL(P65_APP_LOOKUP, lookup_fn)(app.package);
     }
-    CALL(P65_APP_INSTALL, install_fn)(&app, pages, 1);
-    if (CALL(P65_APP_LOOKUP, lookup_fn)(app.package) == 0) {
-        canopus_manager_target_record.app_install_result = -1;
-        return -1;
+    /* Permit retry after publication failure, but never adopt another
+     * resident Manager's callbacks (for example an older loaded binary). */
+    rc = !registered ? -1 :
+        (registered->app_id != app.app_id || registered->name != display_name
+         ? -17 : 0);
+    canopus_manager_target_record.app_install_result = rc;
+    if (rc != 0) return rc;
+    rc = launcher_contains_manager();
+    if (rc == 0) {
+        CALL(P65_LAUNCHER_ADD, add_fn)(app.app_id);
+        rc = launcher_contains_manager();
     }
-    installed = 1;
-    CALL(P65_LAUNCHER_REFRESH, refresh_fn)();
-    canopus_manager_target_record.app_install_result = 0;
-    return 0;
+    canopus_manager_target_record.launcher_add_result = rc == 1 ? 0 : -1;
+    return canopus_manager_target_record.launcher_add_result;
 }
 int canopus_manager_native_notify_module_installed(void)
 {

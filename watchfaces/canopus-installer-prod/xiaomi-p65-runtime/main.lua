@@ -106,7 +106,7 @@ local function bootstrap()
     runner.checkpoint("Restoring enabled modules")
     local data = command(0x4351000a, 0)
     check(u32(data,12) == 0, "Canopus is in safe mode; inspect Manager")
-    return "Canopus ready.\nEnabled modules restored.\nOpen Corona Manager to choose a theme.\n\nYou may now switch watchfaces.\nOpen this entry after each reboot."
+    return "Canopus ready.\nEnabled modules restored.\nCanopus is in the app list.\nEnable corona and activate it there.\nThen open Corona Manager.\n\nYou may now switch watchfaces.\nOpen this entry after each reboot."
 end
 runner = progress.new(lvgl, function(message) status:set{text=message} end,
     function(ok, message) status:set{text=ok and message or ("FAILED\n"..tostring(message)),
